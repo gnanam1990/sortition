@@ -117,7 +117,31 @@ contract VRFCoordinator {
     }
 
     /// @notice Fulfilment record for an operator.
-    /// @dev v1 has exactly one operator, so this mapping holds one entry. It is a
+    ///
+    /// @dev THESE COUNTERS ARE A CONVENIENCE. THE EVENTS ARE THE PROOF.
+    ///
+    ///      `expired` under-reports misses, permanently. `expireRequest` is
+    ///      permissionless but nobody is paid to call it: the service is free so a
+    ///      requester gets no refund for calling it, and the operator is not going
+    ///      to mark their own misses. A genuine miss therefore sits in
+    ///      `pendingCount()` forever and never reaches `expired`.
+    ///
+    ///      That also makes `pendingCount()` ambiguous. It conflates requests
+    ///      still inside the timeout window, which are not misses, with requests
+    ///      past the timeout that nobody bothered to expire, which are. A consumer
+    ///      reading that number cannot separate them, and the second group is
+    ///      exactly what a withholding operator would want hidden in the first.
+    ///
+    ///      This is not eventual consistency. The counter can be wrong forever.
+    ///
+    ///      Compute the real miss rate from events instead. `RandomnessRequested`
+    ///      and `RandomnessFulfilled` carry request ids and block numbers, and
+    ///      `REQUEST_TIMEOUT_BLOCKS` is a public constant, so a request is missed
+    ///      iff it was requested at block b, was never fulfilled, and the chain is
+    ///      past b + REQUEST_TIMEOUT_BLOCKS. That derivation depends on no one
+    ///      having called anything.
+    ///
+    ///      v1 has exactly one operator, so this mapping holds one entry. It is a
     ///      mapping rather than bare counters so the ABI survives a future
     ///      operator registry without changing shape.
     struct Stats {
@@ -348,14 +372,18 @@ contract VRFCoordinator {
     // =====================================================================
 
     /// @notice Fulfilment record for this contract's operator.
+    /// @dev `expired` under-reports and can be permanently wrong. See the NatSpec
+    ///      on `Stats`. Derive the real miss rate from events.
     function operatorStats() external view returns (uint64 requested, uint64 fulfilled, uint64 expired) {
         Stats memory s = stats[operatorId];
         return (s.requested, s.fulfilled, s.expired);
     }
 
     /// @notice Requests that were made, not answered, and not yet marked expired.
-    /// @dev Outstanding requests are not "missed" yet; they are only counted once
-    ///      `expireRequest` is called. This number is the gap.
+    /// @dev DO NOT read this as "requests still in flight". It mixes requests
+    ///      inside the timeout window, which are not misses, with requests past
+    ///      the timeout that nobody expired, which are. See the NatSpec on
+    ///      `Stats`. Use events to tell the two apart.
     function pendingCount() external view returns (uint256) {
         Stats memory s = stats[operatorId];
         return uint256(s.requested) - uint256(s.fulfilled) - uint256(s.expired);

@@ -165,12 +165,59 @@ documented Arc-specific failure mode, not a general precaution.
 | Attack | Outcome |
 |---|---|
 | Operator tries to choose the output | **Impossible.** BLS is deterministic; one valid signature exists |
-| Operator withholds an unfavourable output | **Possible.** Visible on chain as an expired request, counted permanently against them |
+| Operator withholds an unfavourable output | **Possible.** Detectable from events. The on-chain `expired` counter under-reports it — see below |
 | Operator forges a signature | **Impossible without the key.** Verification is a pairing check against the published public key |
 | Requester grinds the seed | **Impossible.** The seed depends on a block hash that does not exist at request time |
 | Consumer contract reverts in the callback | Fulfilment still succeeds; the callback is gas-limited and its failure is isolated |
 | Operator key compromised | **Total failure.** The holder can produce valid signatures for any request. Mitigated only by moving to a threshold key |
 | Operator goes offline | Requests expire. No funds are lost; consumers must handle expiry |
+
+### The miss counter under-reports. Events are the proof.
+
+**The on-chain counters are a convenience. The events are the proof.** This is not a
+caveat about eventual consistency — the `expired` counter can be permanently wrong, and a
+consumer that trusts it is reading exactly the number a dishonest operator would want them
+to read.
+
+`expireRequest` is permissionless, but **nobody is paid to call it.** The service is free,
+so a requester gets no refund for calling it, and the operator is not going to mark their
+own misses. A genuine miss therefore sits in `pendingCount()` indefinitely and never
+reaches `expired`.
+
+That also makes `pendingCount()` ambiguous, because it conflates two different things:
+
+- requests still inside the timeout window, which are **not** misses; and
+- requests past the timeout that nobody bothered to expire, which **are**.
+
+A consumer reading that single number cannot tell them apart, and the second category is
+precisely what a withholding operator would want hidden inside the first.
+
+The fix is not more on-chain machinery. `RandomnessRequested` and `RandomnessFulfilled`
+already carry request ids and block numbers, and `REQUEST_TIMEOUT_BLOCKS` is a public
+constant. Anyone can therefore compute the true miss rate off chain by scanning events:
+
+```
+missed = { id : RandomnessRequested(id, _, b)
+               and no RandomnessFulfilled(id, ...)
+               and currentBlock > b + REQUEST_TIMEOUT_BLOCKS }
+```
+
+That calculation depends on nothing anyone has to be paid to do. It is correct whether or
+not `expireRequest` was ever called, and it is the number a consumer should use before
+trusting this operator with anything.
+
+### Request-and-discard
+
+A requester can make many requests and use only the output they like. Each individual seed
+is ungrindable — that is what the table above says and it remains true — but **nothing
+limits how many requests are made.** A caller who dislikes an outcome can simply request
+again.
+
+Binding to a specific request before its output is known is the **consumer's**
+responsibility, not the coordinator's. A consumer that draws winners must commit to one
+request id and honour its result; one that requests repeatedly until it likes the answer
+has re-introduced grinding at the application layer, above a VRF that prevented it at the
+protocol layer.
 
 **The honest summary.** A single operator cannot rig an outcome, but can refuse to produce
 one. That is strictly better than a block proposer who can silently re-roll, and strictly
