@@ -21,19 +21,29 @@ The name is the classical term for selection by lot.
 
 ## Status
 
-**Unaudited and undeployed. Do not use this for anything that matters yet.** The library,
-the coordinator and the operator daemon exist and are tested; none of it has been reviewed
-by anyone but its author, and nothing has been deployed to Arc.
+**Deployed to Arc testnet. Unaudited. Do not use this for anything that matters.** Being
+deployed changes nothing about that warning — the library, the coordinator and the operator
+daemon are tested, but none of it has been reviewed by anyone other than its author.
+
+### Deployed
+
+| Contract | Address |
+|---|---|
+| `VRFCoordinator` | `0x17376aA831C70998F37522f00FD9f26d44977052` |
+| `ExampleConsumer` | `0x493297D2ca32D279e7E7dc08D691C0BB01Ca833e` |
+
+Arc testnet, chain **5042002**, block **54,075,709**. One full request has been made and
+fulfilled on chain. Addresses, transaction hashes, measured gas and the read-backs that
+prove it are in [`docs/addresses.md`](docs/addresses.md), along with what that single
+fulfilment does *not* demonstrate.
 
 - [x] Feasibility gate — BN254 precompiles verified on Arc testnet (see [`gate/`](gate/))
 - [x] PRD — [`docs/PRD.md`](docs/PRD.md)
 - [x] BLS verification library — [`src/BN254.sol`](src/BN254.sol)
 - [x] Coordinator — [`src/VRFCoordinator.sol`](src/VRFCoordinator.sol)
 - [x] Operator daemon — [`daemon/`](daemon/)
+- [x] Testnet deployment — [`docs/addresses.md`](docs/addresses.md)
 - [ ] Audit
-- [ ] Testnet deployment
-
-Nothing has been deployed to Arc.
 
 ## The feasibility gate
 
@@ -49,21 +59,37 @@ The check includes a negative vector: a pairing that must return `0`. A stubbed 
 that always returns `1` passes every positive check and fails that one. Full detail and
 reproduction steps in [`gate/README.md`](gate/README.md).
 
+## Verifying a fulfilment yourself
+
+You do not have to trust this repository's own BLS library to check that an output is
+genuine:
+
+```bash
+.venv/bin/python tools/verify_onchain_fulfilment.py <coordinator> <requestId> <fulfilTxHash>
+```
+
+It re-derives the seed, the signed message and the signature from raw chain data and checks
+the pairing with **py_ecc — a different implementation from `src/BN254.sol`**. If the
+coordinator and an independent pairing library disagree, that script says so.
+
 ## What this does not claim
 
 - It is not trust-minimised across multiple parties. There is one operator.
 - Liveness is not guaranteed. Suppression is detectable, not preventable.
-- Nothing has been audited. Nothing has been deployed.
+- Nothing has been audited. It is deployed to testnet only, and one fulfilment proves the
+  mechanism works — not that the operator is reliable, which only accumulates over time.
 
 ## Layout
 
 ```
 gate/     BN254 precompile feasibility check
-src/      BN254.sol (BLS verification), VRFCoordinator.sol
+src/      BN254.sol (BLS verification), VRFCoordinator.sol, ExampleConsumer.sol
 test/     Solidity test suites and generated vectors
+script/   deployment script
 daemon/   off-chain operator signer, and the canonical protocol module
-tools/    vector generation and local end-to-end harnesses
-docs/     PRD
+tools/    key generation, key validation, independent fulfilment verification,
+          test-vector generation and local end-to-end harnesses
+docs/     PRD and the deployment record
 ```
 
 ## Reading the operator's record
