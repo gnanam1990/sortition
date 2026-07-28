@@ -1,0 +1,24 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+keystore/
+private_key*
+*.secret
+
+# Foundry build output
+out/
+out-gate/
+cache/
+broadcast/
+!broadcast/**/dry-run/
+
+# Tooling
+docs/book/
+node_modules/
+.DS_Store
+*.log
+__pycache__/
+*.pyc

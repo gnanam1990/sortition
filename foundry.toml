@@ -1,0 +1,21 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 200
+
+# Standalone profile for the recovered BN254 precompile gate check.
+# Build with:  FOUNDRY_PROFILE=gate forge build
+[profile.gate]
+src = "gate/src"
+test = "gate/src"
+out = "out-gate"
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 200
+
+[rpc_endpoints]
+arc_testnet = "https://rpc.testnet.arc.network"
