@@ -69,6 +69,26 @@ contract VRFCoordinator {
     ///      limiting (`-32011 request limit reached`), `txpool is full` under
     ///      load, and the requirement to re-fetch the base fee before every
     ///      submission.
+    ///
+    ///      T IS ALSO A SECURITY PARAMETER, NOT ONLY A LIVENESS ONE.
+    ///
+    ///      Anyone holding the operator secret can compute a request's output the
+    ///      moment `blockhash(requestBlock + 1)` exists — that is, from
+    ///      `requestBlock + 2` — and they hold that knowledge alone until the
+    ///      fulfilment lands. T is the ceiling on that exclusive window: at most
+    ///      190 blocks, roughly 101 seconds.
+    ///
+    ///      They still cannot change the output; signatures are deterministic. But
+    ///      unpredictability is the product of a randomness service, and a draw one
+    ///      party can see in advance is a rigged draw even though the number was
+    ///      not chosen. Lowering T, or simply fulfilling promptly, narrows the
+    ///      window in which that advantage exists. Raising T widens it.
+    ///
+    ///      So T trades two things against each other: too low and honest
+    ///      fulfilment fails under transient Arc conditions, producing misses that
+    ///      are indistinguishable from withholding; too high and a key holder's
+    ///      head start grows. 192 sits where the liveness margin is comfortable and
+    ///      the exposure stays under two minutes.
     uint256 public constant REQUEST_TIMEOUT_BLOCKS = 192;
 
     /// @dev Hard deadline imposed by BLOCKHASH, measured at 256 on Arc. Used only

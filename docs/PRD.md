@@ -169,7 +169,7 @@ documented Arc-specific failure mode, not a general precaution.
 | Operator forges a signature | **Impossible without the key.** Verification is a pairing check against the published public key |
 | Requester grinds the seed | **Impossible.** The seed depends on a block hash that does not exist at request time |
 | Consumer contract reverts in the callback | Fulfilment still succeeds; the callback is gas-limited and its failure is isolated |
-| Operator key compromised | **Total failure.** The holder can produce valid signatures for any request. Mitigated only by moving to a threshold key |
+| Operator key compromised | The holder **cannot change any output** — signatures are deterministic, so the value they produce is the same one an honest operator would. What they gain is **early knowledge**: they can compute the output the moment `blockhash(requestBlock+1)` exists, before anyone else sees it. For a randomness service that is not a lesser failure — unpredictability is the product, and a draw one party can see in advance is a rigged draw even though the number was not chosen. **Integrity survives; the guarantee does not.** Mitigated only by moving to a threshold key |
 | Operator goes offline | Requests expire. No funds are lost; consumers must handle expiry |
 
 ### The miss counter under-reports. Events are the proof.

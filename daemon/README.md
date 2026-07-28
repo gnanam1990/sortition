@@ -71,6 +71,16 @@ sufficient to extract the value: knowing the winning number before publication i
 good as choosing it. They can also fulfil requests on the operator's behalf, which is
 harmless, and they learn every future output for as long as they hold the key.
 
+**Do not read "integrity survives" as a lesser failure.** Unpredictability is the product of
+a randomness service. A draw that one party can see in advance is a rigged draw even though
+the number was never chosen. Integrity survives; the guarantee does not.
+
+This is why prompt fulfilment is a security property and not only good service. The window
+in which a key holder knows the output and nobody else does opens at `requestBlock + 2` and
+closes when the fulfilment lands — bounded above by `REQUEST_TIMEOUT_BLOCKS`, so at most 190
+blocks or about 101 seconds. Every block the daemon shaves off that is a block of exclusive
+advantage removed.
+
 **There is no recovery path in v1.** The public key is `immutable` in the coordinator, by
 design — a rotation path would itself be an output-grinding vector unless requests are bound
 to a key epoch. So a compromised key cannot be replaced. The only remedy is to deploy a new
