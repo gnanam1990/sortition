@@ -149,6 +149,14 @@ calldata only. It was never wrong about the pairing; it was incomplete about the
 verification, and it is correct only for the pre-validated path. That path is now a
 deliberate decision rather than an assumption.
 
+**Measured end to end (stage 2).** The figures above are the verification call. A whole
+`fulfillRandomness` transaction, measured from a real receipt on a local chain rather than
+estimated, costs **183,906 gas** with no consumer callback and **252,884 gas** delivering to
+a consumer that writes three storage slots — about **0.0037 to 0.0051 USDC** at a 20.2 gwei
+gas price, or roughly 118 to 163 fulfilments per 30M gas block. `requestRandomness` costs
+77,691 gas. Gas is not a constraint on this design; the register-and-store decision is what
+made that true.
+
 Arc's base fee must be re-fetched before every submission and never cached — this is a
 documented Arc-specific failure mode, not a general precaution.
 
