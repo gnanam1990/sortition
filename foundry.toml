@@ -6,6 +6,9 @@ libs = ["lib"]
 evm_version = "paris"
 optimizer = true
 optimizer_runs = 200
+# Required: the G2 Jacobian arithmetic in BN254.sol keeps six Fp2 coordinates
+# plus temporaries live at once, which overflows the legacy codegen stack.
+via_ir = true
 
 # Standalone profile for the recovered BN254 precompile gate check.
 # Build with:  FOUNDRY_PROFILE=gate forge build
