@@ -14,6 +14,7 @@ If these two ever disagree, do not deploy.
 """
 import argparse
 import json
+import re
 import os
 import subprocess
 import sys
@@ -55,6 +56,10 @@ def main():
 
     flat = []
     for chunk in args.coords:
+        # `cast call` annotates large numbers with a scientific-notation aside,
+        # e.g. "1813507... [1.813e76]". Strip those before tokenising so the
+        # output of a cast call can be piped straight in.
+        chunk = re.sub(r"\[[^\]]*\]", " ", chunk)
         flat += [t for t in chunk.replace(",", " ").replace("(", " ").replace(")", " ").split() if t]
     if len(flat) != 4:
         raise SystemExit(f"expected 4 coordinates, got {len(flat)}: {flat}")
