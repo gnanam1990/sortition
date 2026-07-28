@@ -133,6 +133,20 @@ import {{BN254}} from "../src/BN254.sol";
 /// implementation before being written, so these assertions are against an
 /// independent source of truth rather than against this repo's own code.
 library Vectors {{
+    /// @dev TEST ONLY — NOT A WALLET KEY, NOT AN OPERATOR KEY.
+    ///
+    ///      This is the BLS secret scalar corresponding to `pubkey()` below. It
+    ///      is committed on purpose: the coordinator tests must sign messages
+    ///      that depend on runtime values — chain id, contract address, and a
+    ///      block hash — which cannot be precomputed into a static vector.
+    ///
+    ///      It controls nothing. It holds no funds, authorises no transaction,
+    ///      and exists only so the test suite can produce valid signatures on
+    ///      demand. A real operator key is generated off chain and never appears
+    ///      in this repository.
+    uint256 internal constant TEST_ONLY_SECRET_SCALAR =
+        {SK_GOOD};
+
     bytes internal constant MESSAGE = "{MSG.decode()}";
     bytes internal constant MESSAGE_MULTI_ITER = "{MSG_MULTI.decode()}";
 
