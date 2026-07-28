@@ -51,6 +51,44 @@ known independently of any chain, so a **wrong** result is distinguishable from 
 something that is not the published constant. These are different findings and the harness
 tells them apart.
 
+## Follow-up measurements (added during stage 1)
+
+Building the BLS library needed facts the original gate did not cover. Rather than
+assume them, they were measured the same way — read-only, on Arc testnet.
+`tools/probe_edges.py` reproduces all of it.
+
+**`0x05` modexp is present and correct.** `3^2 mod 100` returns 9, and
+`4^((p+1)/4) mod p` returns a value that squares back to 4, so modular square
+roots work. The hash-to-curve depends on this.
+
+**`0x08` validates its inputs and fails closed.** Every malformed input was
+rejected outright rather than silently accepted:
+
+| Input to `ecpairing` | Result |
+|---|---|
+| Valid 2-pair control | accepted, returned 1 |
+| G1 off-curve `(1,3)` | **rejected** |
+| G1 coordinate ≥ p | **rejected** |
+| G2 off-curve (one bit flipped in y) | **rejected** |
+| G2 on-curve but in the **wrong subgroup** | **rejected** |
+| G1 = `(0,0)` (infinity) with valid G2 | accepted, returned 1 |
+| G2 = all zeros (infinity) | accepted, returned 1 |
+| Zero-length input | accepted, returned 1 |
+
+The wrong-subgroup row is the notable one, and it required constructing a genuine
+point on the twist E'(Fp2) outside the R-order subgroup to test at all. Arc's
+precompile rejects it.
+
+That does **not** make the library's own subgroup check redundant. This is
+measured behaviour of one chain on one day, not a specification Arc has committed
+to. `src/BN254.sol` validates every point itself before calling any precompile and
+treats this rejection as a backstop.
+
+**The G1 cofactor is 1.** E(Fp) has order exactly R, so for G1 — and only G1 — a
+point being on the curve implies it is in the correct subgroup. Verified across 40
+on-curve points, each satisfying [R]P = O. G2 has a large cofactor and gets no such
+shortcut.
+
 ## Contents
 
 | Path | What it is |
