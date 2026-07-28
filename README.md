@@ -21,15 +21,19 @@ The name is the classical term for selection by lot.
 
 ## Status
 
-**Scaffold only. No contract logic has been written yet.** The feasibility gate has been run
-and passed; the design is not settled and nothing here is usable.
+**Unaudited and undeployed. Do not use this for anything that matters yet.** The library,
+the coordinator and the operator daemon exist and are tested; none of it has been reviewed
+by anyone but its author, and nothing has been deployed to Arc.
 
 - [x] Feasibility gate — BN254 precompiles verified on Arc testnet (see [`gate/`](gate/))
-- [ ] PRD — see [`docs/PRD.md`](docs/PRD.md)
-- [ ] Contract design
-- [ ] Contracts
-- [ ] Tests
+- [x] PRD — [`docs/PRD.md`](docs/PRD.md)
+- [x] BLS verification library — [`src/BN254.sol`](src/BN254.sol)
+- [x] Coordinator — [`src/VRFCoordinator.sol`](src/VRFCoordinator.sol)
+- [x] Operator daemon — [`daemon/`](daemon/)
+- [ ] Audit
 - [ ] Testnet deployment
+
+Nothing has been deployed to Arc.
 
 ## The feasibility gate
 
@@ -54,11 +58,20 @@ reproduction steps in [`gate/README.md`](gate/README.md).
 ## Layout
 
 ```
-gate/     BN254 precompile feasibility check (complete)
-src/      contracts (empty)
-test/     tests (empty)
-docs/     PRD and design notes
+gate/     BN254 precompile feasibility check
+src/      BN254.sol (BLS verification), VRFCoordinator.sol
+test/     Solidity test suites and generated vectors
+daemon/   off-chain operator signer, and the canonical protocol module
+tools/    vector generation and local end-to-end harnesses
+docs/     PRD
 ```
+
+## Reading the operator's record
+
+**The on-chain counters are a convenience. The events are the proof.** `expireRequest` is
+permissionless but nobody is paid to call it, so the `expired` counter under-reports misses
+permanently. Derive the real miss rate from `RandomnessRequested`, `RandomnessFulfilled` and
+the public `REQUEST_TIMEOUT_BLOCKS` constant. See the NatSpec on `Stats` and PRD §6.
 
 ## Licence
 

@@ -28,3 +28,7 @@ gate/tools/vectors.json
 
 # Python tooling
 .venv/
+
+# Daemon runtime state
+sortition-state.json
+*.state.json
